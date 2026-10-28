@@ -1,0 +1,25 @@
+# Questions as people ask them to an assistant. Short, factual answers.
+# Rendered on faq.md, in the FAQPage structured data and in llms.txt.
+- q: What is darvis/printserver?
+  a: A Laravel package that queues print jobs in a `print_jobs` table and lets a small box on location fetch them over HTTPS. The box prints on its own network, so the printers never have to be reachable from the internet.
+
+- q: How do I print on a printer at a customer's site from my web application?
+  a: Queue the job with `app(PrintQueue::class)->queue('PRINTER01', $pdf)` and run the agent on a box at that site. The box calls `print/claim` every few seconds, fetches the file and sends it to its own CUPS queue. No port forward and no VPN.
+
+- q: Why does the box fetch its jobs instead of the server sending them?
+  a: Because anything the server can reach, a scanner can reach too. A printer behind a port forward on port 9100 prints whatever is sent to it, and that is how a printer starts producing spam. With this package all traffic is outgoing from the location.
+
+- q: Which PHP and Laravel versions does darvis/printserver support?
+  a: PHP 8.2 or higher and Laravel 11, 12 and 13. It needs a database and a filesystem disk, nothing else.
+
+- q: Can one installation serve more than one location?
+  a: Yes. A token is `name:administration:token`. A box only ever receives the jobs of its own administration, and a token of another administration is refused with a `403`, so a branch can never print another branch's work.
+
+- q: What happens when a print job fails?
+  a: The box reports it to `print/failed/{uuid}` with the reason, the job gets the status `failed` and it is logged. It is deliberately not queued again, because a sheet that does not come out is better than one that comes out twice.
+
+- q: What runs on the box on location?
+  a: A mini pc or a Raspberry Pi with Linux, CUPS and a small Python agent that polls the endpoints. Any printer CUPS supports works, including label printers that are fed raw ZPL.
+
+- q: Do the files stay on my server?
+  a: Only until they are printed. The content lives on the configured disk and is dropped as soon as the box reports the job as done; `print:cleanup` removes whatever is left after `keep_days`.
