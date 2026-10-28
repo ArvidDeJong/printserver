@@ -59,9 +59,15 @@ return [
     'prefix' => env('PRINTSERVER_PREFIX', 'print'),
 
     /*
-     * The printers print:test accepts, as key => description. The key is the one
-     * the application uses and is also the name of the queue on the box. Leave it
-     * empty to accept any name.
+     * The printers of this installation. The key is the one the application uses and
+     * also the name of the printer on the box. The value is a name, or an array with
+     * a name and the size of the paper or label, which sets the size of a test page:
+     *
+     *     'PRINTER01' => 'Office printer',
+     *     'ZEBRA01' => ['name' => 'Label printer, shipping', 'size' => '4x6'],
+     *
+     * Sizes are a4 (the default), 4x2, 4x4 and 4x6. Leave the list empty to let
+     * print:test accept any name.
      */
     'printers' => [],
 

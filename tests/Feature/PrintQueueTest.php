@@ -30,7 +30,23 @@ test('a test page is a pdf with the name of the printer on it', function () {
 
     expect($job->format)->toBe('pdf')
         ->and($job->title)->toBe('Test page PRINTER01')
-        ->and((string) $job->contents())->toStartWith('%PDF');
+        ->and((string) $job->contents())->toStartWith('%PDF')
+        ->and((string) $job->contents())->toContain('(PRINTER01) Tj')
+        ->and((string) $job->contents())->toContain('(Size: A4) Tj');
+});
+
+test('a test page for a label printer has the size of its label', function () {
+    config([
+        'printserver.administration' => 'amsterdam',
+        'printserver.printers' => ['ZEBRA01' => ['name' => 'Zebra, office', 'size' => '4x2']],
+    ]);
+
+    $contents = (string) app(PrintQueue::class)->queueTestPage('ZEBRA01')->contents();
+
+    expect($contents)->toContain('/MediaBox [0 0 288.00 144.00]')
+        ->and($contents)->toContain('(ZEBRA01: Zebra, office) Tj')
+        ->and($contents)->toContain('(Size: 4x2 inch) Tj')
+        ->and($contents)->toContain('(Administration: amsterdam) Tj');
 });
 
 test('cleanup removes old jobs with their files and leaves the recent ones alone', function () {

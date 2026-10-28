@@ -41,7 +41,7 @@ The status of a stuck job says where to look: `pending` means the box never came
 
 ## Adding a printer
 
-Create a CUPS queue on the box named exactly like the key the application uses: `lpadmin -m everywhere` for an IPP printer, a raw `socket://<ip>:9100` queue for a label printer. Add the key to `printserver.printers` when `print:test` should only accept known names.
+Create a CUPS queue on the box named exactly like the key the application uses: `lpadmin -m everywhere` for an IPP printer, a raw `socket://<ip>:9100` queue for a label printer. Add the key to `printserver.printers`, with a size for a label printer: `'ZEBRA01' => ['name' => 'Shipping', 'size' => '4x6']`. Sizes are `a4` (default), `4x2`, `4x4` and `4x6`; a test page gets that size. With the list filled, `print:test` only accepts known names.
 
 ## Testing printing code
 

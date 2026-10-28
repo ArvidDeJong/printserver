@@ -41,13 +41,25 @@ class PrintQueue
     }
 
     /**
-     * Queues a test page with one line of text on it.
+     * Queues a test page in the paper or label size of the printer.
+     *
+     * Without a text the page names the printer, its size, the administration and the
+     * time, so a sheet that comes out tells you where it was meant to go.
      */
     public function queueTestPage(string $printer, ?string $text = null): PrintJob
     {
-        $text ??= 'Test page '.$printer.', '.now()->format('d-m-Y H:i:s');
+        $size = PrintserverConfig::printerSize($printer);
+        $name = PrintserverConfig::printers()[$printer] ?? $printer;
 
-        return $this->queue($printer, TestPage::pdf($text), 'Test page '.$printer);
+        $text ??= implode("\n", [
+            'Test page',
+            $name === $printer ? $printer : $printer.': '.$name,
+            'Size: '.($size === 'a4' ? 'A4' : $size.' inch'),
+            'Administration: '.(PrintserverConfig::administration() ?? 'none'),
+            now()->format('d-m-Y H:i:s'),
+        ]);
+
+        return $this->queue($printer, TestPage::pdf($text, $size), 'Test page '.$printer);
     }
 
     /**

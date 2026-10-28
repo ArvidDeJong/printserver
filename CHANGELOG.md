@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-28
+
+### Added
+- A printer in `printserver.printers` can be an array with a `name` and a `size`: `a4`, `4x2`,
+  `4x4` or `4x6`. A test page now gets the size of the paper or label of its printer, so a
+  label printer receives a test label instead of an A4.
+- `PrintserverConfig::printerSize()`.
+
+### Changed
+- A test page shows the printer, its name, its size, the administration and the time, with a
+  border just inside the edge to check the calibration of a label printer.
+- Accents on a test page print as accents.
+
 ## [1.0.0] - 2026-10-28
 
 ### Added

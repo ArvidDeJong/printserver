@@ -58,3 +58,24 @@ test('the prefix and the path lose their slashes, so a url never has a double on
     expect(PrintserverConfig::prefix())->toBe('shop/print')
         ->and(PrintserverConfig::path())->toBe('shop/print-jobs');
 });
+
+test('a printer is a plain name or an array with a name and a size', function () {
+    config(['printserver.printers' => [
+        'PRINTER01' => 'Office',
+        'ZEBRA01' => ['name' => 'Shipping', 'size' => '4X6'],
+        'ZEBRA02' => ['size' => '4x2'],
+        'ZEBRA03' => ['name' => 'Odd roll', 'size' => 'letter'],
+    ]]);
+
+    expect(PrintserverConfig::printers())->toBe([
+        'PRINTER01' => 'Office',
+        'ZEBRA01' => 'Shipping',
+        'ZEBRA02' => 'ZEBRA02',
+        'ZEBRA03' => 'Odd roll',
+    ])
+        ->and(PrintserverConfig::printerSize('PRINTER01'))->toBe('a4')
+        ->and(PrintserverConfig::printerSize('ZEBRA01'))->toBe('4x6')
+        ->and(PrintserverConfig::printerSize('ZEBRA02'))->toBe('4x2')
+        ->and(PrintserverConfig::printerSize('ZEBRA03'))->toBe('a4')
+        ->and(PrintserverConfig::printerSize('UNKNOWN'))->toBe('a4');
+});

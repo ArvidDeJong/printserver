@@ -82,16 +82,47 @@ final class PrintserverConfig
     }
 
     /**
-     * The printers print:test accepts, as key => description. Empty accepts any name.
+     * The known printers as key => name. Empty means print:test accepts any name.
+     *
+     * A printer is configured as a plain name, or as an array with a name and a size.
      *
      * @return array<string, string>
      */
     public static function printers(): array
     {
-        /** @var array<string, string> $printers */
-        $printers = (array) config('printserver.printers', []);
+        $printers = [];
+
+        foreach (self::printerEntries() as $key => $printer) {
+            $printers[$key] = is_array($printer) ? (string) ($printer['name'] ?? $key) : (string) $printer;
+        }
 
         return $printers;
+    }
+
+    /**
+     * The paper size of a printer: a4, or a label size such as 4x2 or 4x6. A printer
+     * without a size, an unknown printer and an unknown size all count as a4.
+     */
+    public static function printerSize(string $printer): string
+    {
+        $entry = self::printerEntries()[$printer] ?? null;
+        $size = is_array($entry) ? strtolower((string) ($entry['size'] ?? 'a4')) : 'a4';
+
+        return array_key_exists($size, TestPage::SIZES) ? $size : 'a4';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function printerEntries(): array
+    {
+        $entries = [];
+
+        foreach ((array) config('printserver.printers', []) as $key => $printer) {
+            $entries[(string) $key] = $printer;
+        }
+
+        return $entries;
     }
 
     /**

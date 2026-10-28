@@ -40,6 +40,7 @@ class TestPageCommand extends Command
 
         $this->newLine();
         $this->components->twoColumnDetail('Printer', $job->printer);
+        $this->components->twoColumnDetail('Size', PrintserverConfig::printerSize($job->printer));
         $this->components->twoColumnDetail('Administration', $job->administration ?? 'none');
         $this->components->twoColumnDetail('Uuid', $job->uuid);
         $this->components->twoColumnDetail('Status', $job->status);

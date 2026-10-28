@@ -49,9 +49,18 @@ The box sends raw content straight to the queue, so the printer receives exactly
 $queue->queueTestPage('PRINTER01');
 ```
 
-That queues a one line PDF with the name of the printer and the time on it, the same thing
-`php artisan print:test PRINTER01` does. The PDF is built by hand, so a test page needs no pdf
-library.
+That queues a PDF with the printer, its size, the administration and the time on it, the same
+thing `php artisan print:test PRINTER01` does. The page has the size of the paper or label from
+the [configuration](configuration.md#printers-and-their-sizes), with a border just inside the edge:
+on a calibrated label printer that border runs around all four sides. The PDF is built by hand, so
+a test page needs no pdf library.
+
+A label printer that is fed PDF needs to accept PDF itself; Zebra calls this PDF Direct. Without
+it, send it a test in its own language instead:
+
+```php
+$queue->queue('ZEBRA01', "^XA^FO40,40^A0N,40^FDTest ZEBRA01^FS^XZ", 'Test ZEBRA01', 'zpl');
+```
 
 ## What happens next
 
