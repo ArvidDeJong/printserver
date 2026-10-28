@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-28
+
 ### Added
 - First release. Queue print jobs in Laravel and let a box on location fetch them over HTTPS:
   the `print_jobs` table, the `PrintQueue` service, the four endpoints behind a bearer token,
