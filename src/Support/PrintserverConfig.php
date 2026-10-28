@@ -21,6 +21,49 @@ final class PrintserverConfig
     }
 
     /**
+     * Every administration a box may belong to: the one of this installation and the ones
+     * printers name themselves. A box of any other administration is refused.
+     *
+     * @return list<string>
+     */
+    public static function administrations(): array
+    {
+        $administrations = [self::administration()];
+
+        foreach (array_keys(self::printerEntries()) as $printer) {
+            $administrations[] = self::printerAdministration($printer);
+        }
+
+        return array_values(array_unique(array_filter($administrations, static fn (?string $value): bool => $value !== null)));
+    }
+
+    /**
+     * The administration a printer belongs to: its own when the config names one, otherwise
+     * the one of this installation. A job for this printer is only handed to a box of that
+     * administration.
+     */
+    public static function printerAdministration(string $printer): ?string
+    {
+        $entry = self::printerEntries()[$printer] ?? null;
+        $administration = is_array($entry) ? trim((string) ($entry['administration'] ?? '')) : '';
+
+        return $administration === '' ? self::administration() : $administration;
+    }
+
+    /**
+     * The name the box knows a printer by. That is the key, unless the config gives the
+     * printer another one; one installation can then hold two printers that are called the
+     * same on two different boxes, such as the office printer of two branches.
+     */
+    public static function printerOnBox(string $printer): string
+    {
+        $entry = self::printerEntries()[$printer] ?? null;
+        $name = is_array($entry) ? trim((string) ($entry['printer'] ?? '')) : '';
+
+        return $name === '' ? $printer : $name;
+    }
+
+    /**
      * The addresses that may reach the endpoints. Empty means every address is allowed.
      *
      * @return list<string>
@@ -84,7 +127,8 @@ final class PrintserverConfig
     /**
      * The known printers as key => name. Empty means print:test accepts any name.
      *
-     * A printer is configured as a plain name, or as an array with a name and a size.
+     * A printer is configured as a plain name, or as an array with a name, a size, an
+     * administration and the name of the printer on the box.
      *
      * @return array<string, string>
      */

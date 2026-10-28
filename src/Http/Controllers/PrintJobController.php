@@ -3,7 +3,6 @@
 namespace Darvis\Printserver\Http\Controllers;
 
 use Darvis\Printserver\Models\PrintJob;
-use Darvis\Printserver\Services\PrintQueue;
 use Darvis\Printserver\Support\PrintserverConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,12 +15,11 @@ use Illuminate\Support\Facades\Log;
  * The endpoints a print box uses to fetch its work.
  *
  * The box posts to claim(), fetches the content with file() and reports back with
- * done() or failed(). All traffic is outgoing from the location.
+ * done() or failed(). All traffic is outgoing from the location. A box only ever sees
+ * the jobs of its own administration.
  */
 class PrintJobController extends Controller
 {
-    public function __construct(private readonly PrintQueue $queue) {}
-
     /**
      * Returns the waiting jobs and marks them claimed in the same transaction.
      *
@@ -30,13 +28,13 @@ class PrintJobController extends Controller
      */
     public function claim(Request $request): JsonResponse
     {
-        $box = (string) $request->attributes->get('printbox', 'onbekend');
-        $administration = $this->queue->administration();
+        $box = (string) $request->attributes->get('printbox', 'unknown');
+        $administration = $this->administrationOf($request);
         $limit = PrintserverConfig::claimLimit();
 
         $jobs = DB::transaction(function () use ($box, $administration, $limit) {
             $jobs = PrintJob::where('status', PrintJob::STATUS_PENDING)
-                ->when($administration !== null, fn ($query) => $query->where('administration', $administration))
+                ->where('administration', $administration)
                 ->orderBy('id')
                 ->limit($limit)
                 ->lockForUpdate()
@@ -66,10 +64,9 @@ class PrintJobController extends Controller
     /**
      * Returns the content of one job.
      */
-    public function file(string $uuid): Response
+    public function file(Request $request, string $uuid): Response
     {
-        $job = PrintJob::where('uuid', $uuid)->firstOrFail();
-        $contents = $job->contents();
+        $contents = $this->findJob($request, $uuid)->contents();
 
         if ($contents === null) {
             return response('This file has already been cleaned up.', Response::HTTP_GONE);
@@ -81,9 +78,9 @@ class PrintJobController extends Controller
     /**
      * Marks the job as delivered to the printer and drops the file.
      */
-    public function done(string $uuid): JsonResponse
+    public function done(Request $request, string $uuid): JsonResponse
     {
-        $job = PrintJob::where('uuid', $uuid)->firstOrFail();
+        $job = $this->findJob($request, $uuid);
 
         $job->update([
             'printed_at' => now(),
@@ -103,7 +100,7 @@ class PrintJobController extends Controller
      */
     public function failed(Request $request, string $uuid): JsonResponse
     {
-        $job = PrintJob::where('uuid', $uuid)->firstOrFail();
+        $job = $this->findJob($request, $uuid);
 
         $job->update([
             'error' => substr((string) $request->input('error'), 0, 1000),
@@ -118,5 +115,27 @@ class PrintJobController extends Controller
         ]);
 
         return response()->json(['status' => PrintJob::STATUS_FAILED]);
+    }
+
+    /**
+     * The administration whose jobs this box may see: its own, or, for a box without one,
+     * the one of this installation. Never the jobs of a location that has a box of its own.
+     */
+    private function administrationOf(Request $request): ?string
+    {
+        $administration = (string) $request->attributes->get('printbox_administration', '');
+
+        return $administration !== '' ? $administration : PrintserverConfig::administration();
+    }
+
+    /**
+     * Finds a job of this box's administration; a job of another one is a 404, as if it
+     * did not exist.
+     */
+    private function findJob(Request $request, string $uuid): PrintJob
+    {
+        return PrintJob::where('uuid', $uuid)
+            ->where('administration', $this->administrationOf($request))
+            ->firstOrFail();
     }
 }

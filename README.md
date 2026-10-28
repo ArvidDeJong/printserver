@@ -74,6 +74,8 @@ sheet that does not come out than one that comes out twice.
 A token is `name:administration:token`. The administration is the lock: a box of one branch that
 points at the installation of another gets a `403` instead of its work, and `claim` only ever
 returns the jobs of its own administration. Leave the administration out when there is only one.
+One installation can also serve several locations by giving each printer its administration; see
+[Configuration](docs/configuration.md#several-locations-in-one-installation).
 
 ## Documentation
 

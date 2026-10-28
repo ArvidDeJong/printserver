@@ -56,6 +56,29 @@ string is the name. An array adds the `size`: `a4` (the default), `4x2`, `4x4` o
 three in inches as label rolls are sold. The size decides the size of a test page, so a label
 printer gets a test label instead of an A4 it cannot handle.
 
+## Several locations in one installation
+
+Usually every location has an installation of its own, with its own `PRINTSERVER_ADMINISTRATION`.
+When one installation serves several locations, a test setup for instance, give each printer the
+administration of its location:
+
+```php
+'printers' => [
+    'home-hp' => ['administration' => 'home', 'name' => 'HP at home', 'printer' => 'HPHOME'],
+    'office-konika' => ['administration' => 'amsterdam', 'name' => 'Konica', 'printer' => 'konika'],
+    'shop-konika' => ['administration' => 'rotterdam', 'name' => 'Konica', 'printer' => 'konika'],
+],
+```
+
+- A job gets the administration of its printer, and only a box of that administration receives
+  it. A box with a token for `home` never sees the work of `amsterdam`, not even by its uuid.
+- A box gets in when its administration is the one of the installation or one that a printer
+  names. Any other is refused with a `403`.
+- `printer` is the name the box knows the printer by. Leave it out when that is the key. It lets
+  two locations both have a `konika` in one list.
+
+Make a token per box with its administration: `php artisan print:token pi --administration=home`.
+
 ## Your own routes
 
 Set `routes` to `false` to wire the endpoints up yourself, for instance inside an existing group:

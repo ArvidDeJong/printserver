@@ -13,8 +13,9 @@ A token is `name:administration:token`:
 
 - **name** ends up in `claimed_by`, so a job tells you which box printed it.
 - **administration** is the lock. A box of one branch that points at the installation of another
-  gets a `403` instead of its work, and `claim` only ever returns the jobs of its own
-  administration. With one location you may leave it out, and a token is then `name:token`.
+  gets a `403` instead of its work, and a box only ever sees the jobs of its own administration:
+  `claim` does not return the others, and `file`, `done` and `failed` answer `404` for them. With
+  one location you may leave it out, and a token is then `name:token`.
 - **token** is compared with `hash_equals`, so the comparison takes the same time whatever the
   value.
 

@@ -13,7 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Tokens are configured as name:administration:token separated by commas, or in the short
  * form name:token. The administration is the lock: a box of one branch that points at the
- * installation of another gets a 403 instead of its work.
+ * installation of another gets a 403 instead of its work. An installation that serves several
+ * locations names an administration per printer; a box of any of those gets in.
  */
 class VerifyPrintboxToken
 {
@@ -29,16 +30,17 @@ class VerifyPrintboxToken
             return response()->json(['message' => 'No valid token.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $administration = PrintserverConfig::administration();
+        $administrations = PrintserverConfig::administrations();
 
-        if ($box['administration'] !== '' && $box['administration'] !== (string) $administration) {
+        if ($box['administration'] !== '' && ! in_array($box['administration'], $administrations, true)) {
             return response()->json([
                 'message' => 'This token belongs to administration '.$box['administration'].', this installation is '
-                    .($administration === null ? 'without an administration' : $administration).'.',
+                    .($administrations === [] ? 'without an administration' : implode(', ', $administrations)).'.',
             ], Response::HTTP_FORBIDDEN);
         }
 
         $request->attributes->set('printbox', $box['name']);
+        $request->attributes->set('printbox_administration', $box['administration']);
 
         return $next($request);
     }

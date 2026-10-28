@@ -17,7 +17,7 @@ class PrintQueue
     /**
      * Queues one job for a printer.
      *
-     * @param  string  $printer  The key of the printer, equal to the key in the configuration of the box
+     * @param  string  $printer  The key of the printer: a key of printserver.printers, or the name of the printer on the box
      * @param  string  $content  Raw content: a PDF, or the bytes for a label printer
      * @param  string|null  $title  Description shown in the log of the box
      * @param  string  $format  pdf or zpl
@@ -30,10 +30,10 @@ class PrintQueue
         Storage::disk(PrintserverConfig::disk())->put($path, $content);
 
         return PrintJob::create([
-            'administration' => $this->administration(),
+            'administration' => PrintserverConfig::printerAdministration($printer),
             'format' => $format,
             'path' => $path,
-            'printer' => $printer,
+            'printer' => PrintserverConfig::printerOnBox($printer),
             'status' => PrintJob::STATUS_PENDING,
             'title' => $title,
             'uuid' => $uuid,
@@ -55,7 +55,7 @@ class PrintQueue
             'Test page',
             $name === $printer ? $printer : $printer.': '.$name,
             'Size: '.($size === 'a4' ? 'A4' : $size.' inch'),
-            'Administration: '.(PrintserverConfig::administration() ?? 'none'),
+            'Administration: '.(PrintserverConfig::printerAdministration($printer) ?? 'none'),
             now()->format('d-m-Y H:i:s'),
         ]);
 

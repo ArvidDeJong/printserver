@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-28
+
+### Added
+- One installation can serve several locations. A printer in `printserver.printers` can name its
+  own `administration`; its jobs get that administration and only a box of it receives them. A
+  box of any administration the installation or its printers name gets in.
+- A printer can name the `printer` it is known by on its box, so two locations can each have a
+  printer called `konika` in one list.
+- `PrintserverConfig::administrations()`, `printerAdministration()` and `printerOnBox()`.
+
+### Changed
+- `file`, `done` and `failed` answer `404` for a job of another administration, so a box can
+  only touch its own jobs, also when it knows the uuid of another.
+- A box without an administration only gets the jobs of the installation's own administration.
+
 ## [1.1.0] - 2026-10-28
 
 ### Added

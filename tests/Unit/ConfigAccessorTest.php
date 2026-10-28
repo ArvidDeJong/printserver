@@ -79,3 +79,32 @@ test('a printer is a plain name or an array with a name and a size', function ()
         ->and(PrintserverConfig::printerSize('ZEBRA03'))->toBe('a4')
         ->and(PrintserverConfig::printerSize('UNKNOWN'))->toBe('a4');
 });
+
+test('a printer can belong to another administration and have another name on its box', function () {
+    config([
+        'printserver.administration' => 'amsterdam',
+        'printserver.printers' => [
+            'PRINTER01' => 'Office',
+            'home-hp' => ['administration' => 'home', 'printer' => 'HPHOME'],
+            'rotterdam-konika' => ['administration' => 'rotterdam', 'printer' => 'konika'],
+            'konika' => ['administration' => '', 'name' => 'Konica'],
+        ],
+    ]);
+
+    expect(PrintserverConfig::printerAdministration('PRINTER01'))->toBe('amsterdam')
+        ->and(PrintserverConfig::printerAdministration('home-hp'))->toBe('home')
+        ->and(PrintserverConfig::printerAdministration('konika'))->toBe('amsterdam')
+        ->and(PrintserverConfig::printerAdministration('UNKNOWN'))->toBe('amsterdam')
+        ->and(PrintserverConfig::printerOnBox('home-hp'))->toBe('HPHOME')
+        ->and(PrintserverConfig::printerOnBox('rotterdam-konika'))->toBe('konika')
+        ->and(PrintserverConfig::printerOnBox('PRINTER01'))->toBe('PRINTER01')
+        ->and(PrintserverConfig::printerOnBox('UNKNOWN'))->toBe('UNKNOWN')
+        ->and(PrintserverConfig::administrations())->toBe(['amsterdam', 'home', 'rotterdam']);
+});
+
+test('without any administration there is none to allow', function () {
+    config(['printserver.administration' => null, 'printserver.printers' => ['PRINTER01' => 'Office']]);
+
+    expect(PrintserverConfig::administrations())->toBe([])
+        ->and(PrintserverConfig::printerAdministration('PRINTER01'))->toBeNull();
+});

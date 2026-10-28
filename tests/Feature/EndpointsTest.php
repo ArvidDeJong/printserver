@@ -128,3 +128,55 @@ test('an unknown job gives a 404 and not an empty sheet', function () {
     $this->get('print/file/'.Str::uuid(), box())->assertNotFound();
     $this->postJson('print/done/'.Str::uuid(), [], box())->assertNotFound();
 });
+
+test('one installation serves several locations, and every box only gets its own work', function () {
+    config([
+        'printserver.printers' => [
+            'home-hp' => ['administration' => 'home', 'name' => 'HP at home', 'printer' => 'PRINTER01'],
+            'PRINTER01' => 'Office',
+        ],
+        'printserver.tokens' => 'amsterdam:amsterdam:token-amsterdam,pi:home:token-home',
+    ]);
+
+    $office = app(PrintQueue::class)->queue('PRINTER01', 'office');
+    $home = app(PrintQueue::class)->queue('home-hp', 'home');
+
+    expect($home->administration)->toBe('home')
+        ->and($home->printer)->toBe('PRINTER01')
+        ->and($office->administration)->toBe('amsterdam');
+
+    $this->postJson('print/claim', [], box('token-home'))
+        ->assertJsonCount(1, 'jobs')
+        ->assertJsonPath('jobs.0.uuid', $home->uuid)
+        ->assertJsonPath('jobs.0.printer', 'PRINTER01');
+
+    $this->postJson('print/claim', [], box())
+        ->assertJsonCount(1, 'jobs')
+        ->assertJsonPath('jobs.0.uuid', $office->uuid);
+});
+
+test('a box cannot fetch or report a job of another location, even with its uuid', function () {
+    config([
+        'printserver.printers' => ['home-hp' => ['administration' => 'home']],
+        'printserver.tokens' => 'amsterdam:amsterdam:token-amsterdam,pi:home:token-home',
+    ]);
+
+    $home = app(PrintQueue::class)->queue('home-hp', 'home');
+
+    $this->get('print/file/'.$home->uuid, box())->assertNotFound();
+    $this->postJson('print/done/'.$home->uuid, [], box())->assertNotFound();
+    $this->postJson('print/failed/'.$home->uuid, [], box())->assertNotFound();
+
+    expect($home->refresh()->status)->toBe('pending');
+});
+
+test('a token of an administration that no printer and no installation has is refused', function () {
+    config([
+        'printserver.printers' => ['home-hp' => ['administration' => 'home']],
+        'printserver.tokens' => 'other:utrecht:token-utrecht',
+    ]);
+
+    $this->postJson('print/claim', [], box('token-utrecht'))
+        ->assertForbidden()
+        ->assertJsonPath('message', 'This token belongs to administration utrecht, this installation is amsterdam, home.');
+});
